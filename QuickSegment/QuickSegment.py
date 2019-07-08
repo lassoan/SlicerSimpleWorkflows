@@ -46,19 +46,12 @@ class QuickSegmentWidget(ScriptedLoadableModuleWidget):
     self.layout.addWidget(uiWidget)
     self.ui = slicer.util.childWidgetVariables(uiWidget)
 
-    #self.ui.inputSelector.setMRMLScene(slicer.mrmlScene)
-    #self.ui.outputSelector.setMRMLScene(slicer.mrmlScene)
-
-    # connections
-    #self.ui.applyButton.connect('clicked(bool)', self.onApplyButton)
-    #self.ui.inputSelector.connect("currentNodeChanged(vtkMRMLNode*)", self.onSelect)
-    #self.ui.outputSelector.connect("currentNodeChanged(vtkMRMLNode*)", self.onSelect)
+    if (self.ui.segmentEditorWidget.mrmlSegmentEditorNode() is None):
+      segmentEditorNode = slicer.mrmlScene.AddNewNodeByClass("vtkMRMLSegmentEditorNode")
+      self.ui.segmentEditorWidget.setMRMLSegmentEditorNode(segmentEditorNode)
 
     # Add vertical spacer
     self.layout.addStretch(1)
-
-    # Refresh Apply button state
-    self.onSelect()
 
     self.isSingleModuleShown = False
     slicer.util.mainWindow().setWindowTitle("QuickEdit")
@@ -98,16 +91,6 @@ class QuickSegmentWidget(ScriptedLoadableModuleWidget):
 
     if singleModule:
       slicer.util.setPythonConsoleVisible(False)
-
-  def onSelect(self):
-    pass
-    #self.ui.applyButton.enabled = self.ui.inputSelector.currentNode() and self.ui.outputSelector.currentNode()
-
-  def onApplyButton(self):
-    logic = QuickSegmentLogic()
-    enableScreenshotsFlag = self.ui.enableScreenshotsFlagCheckBox.checked
-    imageThreshold = self.ui.imageThresholdSliderWidget.value
-    #logic.run(self.ui.inputSelector.currentNode(), self.ui.outputSelector.currentNode(), imageThreshold, enableScreenshotsFlag)
 
 #
 # QuickSegmentLogic

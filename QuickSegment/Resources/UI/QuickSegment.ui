@@ -1,7 +1,7 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <ui version="4.0">
- <class>UtilTest</class>
- <widget class="QWidget" name="UtilTest">
+ <class>quickSegment</class>
+ <widget class="qSlicerWidget" name="quickSegment">
   <property name="geometry">
    <rect>
     <x>0</x>
@@ -12,17 +12,17 @@
   </property>
   <layout class="QFormLayout" name="formLayout">
    <item row="0" column="0" colspan="2">
-    <widget class="QPushButton" name="pushButton">
+    <widget class="QPushButton" name="loadImageButton">
      <property name="text">
       <string>Load image</string>
      </property>
     </widget>
    </item>
    <item row="1" column="0" colspan="2">
-    <widget class="qMRMLSegmentEditorWidget" name="SegmentEditorWidget"/>
+    <widget class="qMRMLSegmentEditorWidget" name="segmentEditorWidget"/>
    </item>
    <item row="5" column="0" colspan="2">
-    <widget class="QPushButton" name="pushButton_4">
+    <widget class="QPushButton" name="exportModelsButton">
      <property name="text">
       <string>Export models</string>
      </property>
@@ -31,14 +31,14 @@
    <item row="6" column="0" colspan="2">
     <layout class="QHBoxLayout" name="horizontalLayout">
      <item>
-      <widget class="QPushButton" name="pushButton_3">
+      <widget class="QPushButton" name="quitButton">
        <property name="text">
         <string>Quit</string>
        </property>
       </widget>
      </item>
      <item>
-      <widget class="QPushButton" name="pushButton_2">
+      <widget class="QPushButton" name="saveDataButton">
        <property name="text">
         <string>Save data</string>
        </property>
@@ -56,11 +56,34 @@
    <container>1</container>
   </customwidget>
   <customwidget>
+   <class>qSlicerWidget</class>
+   <extends>QWidget</extends>
+   <header>qSlicerWidget.h</header>
+   <container>1</container>
+  </customwidget>
+  <customwidget>
    <class>qMRMLSegmentEditorWidget</class>
    <extends>qMRMLWidget</extends>
    <header>qMRMLSegmentEditorWidget.h</header>
   </customwidget>
  </customwidgets>
  <resources/>
- <connections/>
+ <connections>
+  <connection>
+   <sender>quickSegment</sender>
+   <signal>mrmlSceneChanged(vtkMRMLScene*)</signal>
+   <receiver>segmentEditorWidget</receiver>
+   <slot>setMRMLScene(vtkMRMLScene*)</slot>
+   <hints>
+    <hint type="sourcelabel">
+     <x>210</x>
+     <y>257</y>
+    </hint>
+    <hint type="destinationlabel">
+     <x>210</x>
+     <y>233</y>
+    </hint>
+   </hints>
+  </connection>
+ </connections>
 </ui>
