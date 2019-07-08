@@ -40,15 +40,19 @@ class QuickSegmentWidget(ScriptedLoadableModuleWidget):
 
   def setup(self):
     ScriptedLoadableModuleWidget.setup(self)
+    self.logic = QuickSegmentLogic()
 
     # Load widget from .ui file (created by Qt Designer)
     uiWidget = slicer.util.loadUI(self.resourcePath('UI/QuickSegment.ui'))
     self.layout.addWidget(uiWidget)
     self.ui = slicer.util.childWidgetVariables(uiWidget)
+    uiWidget.setMRMLScene(slicer.mrmlScene)
 
     if (self.ui.segmentEditorWidget.mrmlSegmentEditorNode() is None):
       segmentEditorNode = slicer.mrmlScene.AddNewNodeByClass("vtkMRMLSegmentEditorNode")
-      self.ui.segmentEditorWidget.setMRMLSegmentEditorNode(segmentEditorNode)
+      self.ui.segmentEditorWidget.setMRMLSegmentEditorNode(segmentEditorNode)   
+
+    self.ui.exportModelsButton.connect("clicked()", self.onExportModelsClicked)
 
     # Add vertical spacer
     self.layout.addStretch(1)
@@ -62,6 +66,9 @@ class QuickSegmentWidget(ScriptedLoadableModuleWidget):
 
   def cleanup(self):
     pass
+
+  def onExportModelsClicked(self):
+    self.logic.exportModels(self.ui.segmentEditorWidget.segmentationNode())
 
   def showSingleModule(self, singleModule=True, toggle=False):
 
@@ -105,6 +112,10 @@ class QuickSegmentLogic(ScriptedLoadableModuleLogic):
   Uses ScriptedLoadableModuleLogic base class, available at:
   https://github.com/Slicer/Slicer/blob/master/Base/Python/slicer/ScriptedLoadableModule.py
   """
+
+  def exportModels(self, segmentationNode):
+    modelHierarchyNode = slicer.mrmlScene.AddNewNodeByClass("vtkMRMLModelHierarchyNode")
+    slicer.modules.segmentations.logic().ExportAllSegmentsToModelHierarchy(segmentationNode, modelHierarchyNode)
 
   def hasImageData(self,volumeNode):
     """This is an example logic method that
