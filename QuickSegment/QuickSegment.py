@@ -3,6 +3,7 @@ import unittest
 import vtk, qt, ctk, slicer
 from slicer.ScriptedLoadableModule import *
 import logging
+from slicer.util import VTKObservationMixin
 
 #
 # QuickSegment
@@ -33,10 +34,14 @@ and Steve Pieper, Isomics, Inc. and was partially funded by NIH grant 3P41RR0132
 # QuickSegmentWidget
 #
 
-class QuickSegmentWidget(ScriptedLoadableModuleWidget):
+class QuickSegmentWidget(ScriptedLoadableModuleWidget, VTKObservationMixin):
   """Uses ScriptedLoadableModuleWidget base class, available at:
   https://github.com/Slicer/Slicer/blob/master/Base/Python/slicer/ScriptedLoadableModule.py
   """
+
+  def __init__(self, parent):
+    ScriptedLoadableModuleWidget.__init__(self, parent)
+    VTKObservationMixin.__init__(self)
 
   def setup(self):
     ScriptedLoadableModuleWidget.setup(self)
@@ -46,11 +51,9 @@ class QuickSegmentWidget(ScriptedLoadableModuleWidget):
     uiWidget = slicer.util.loadUI(self.resourcePath('UI/QuickSegment.ui'))
     self.layout.addWidget(uiWidget)
     self.ui = slicer.util.childWidgetVariables(uiWidget)
-    uiWidget.setMRMLScene(slicer.mrmlScene)
 
-    if (self.ui.segmentEditorWidget.mrmlSegmentEditorNode() is None):
-      segmentEditorNode = slicer.mrmlScene.AddNewNodeByClass("vtkMRMLSegmentEditorNode")
-      self.ui.segmentEditorWidget.setMRMLSegmentEditorNode(segmentEditorNode)   
+    self.selectParameterNode()
+    uiWidget.setMRMLScene(slicer.mrmlScene)
 
     self.ui.exportModelsButton.connect("clicked()", self.onExportModelsClicked)
 
@@ -64,8 +67,51 @@ class QuickSegmentWidget(ScriptedLoadableModuleWidget):
     shortcut.setKey(qt.QKeySequence("Ctrl+Shift+b"))
     shortcut.connect('activated()', lambda: self.showSingleModule(toggle=True))
 
+    self.addObserver(slicer.mrmlScene, slicer.mrmlScene.StartCloseEvent, self.onSceneStartClose)
+    self.addObserver(slicer.mrmlScene, slicer.mrmlScene.EndCloseEvent, self.onSceneEndClose)
+    self.addObserver(slicer.mrmlScene, slicer.mrmlScene.EndImportEvent, self.onSceneEndImport)
+
+  def selectParameterNode(self):
+    # Select parameter set node if one is found in the scene, and create one otherwise
+    segmentEditorSingletonTag = "QuickSegment.SegmentEditor"
+    segmentEditorNode = slicer.mrmlScene.GetSingletonNode(segmentEditorSingletonTag, "vtkMRMLSegmentEditorNode")
+    if segmentEditorNode is None:
+      segmentEditorNode = slicer.vtkMRMLSegmentEditorNode()
+      segmentEditorNode.SetSingletonTag(segmentEditorSingletonTag)
+      segmentEditorNode = slicer.mrmlScene.AddNode(segmentEditorNode)
+    if self.ui.segmentEditorWidget.mrmlSegmentEditorNode() == segmentEditorNode:
+      # nothing changed
+      return
+    self.ui.segmentEditorWidget.setMRMLSegmentEditorNode(segmentEditorNode)
+
+  def enter(self):
+    self.selectParameterNode()
+    # Allow switching between effects and selected segment using keyboard shortcuts
+    self.ui.segmentEditorWidget.installKeyboardShortcuts()
+    self.ui.segmentEditorWidget.setupViewObservations()
+    self.ui.segmentEditorWidget.updateWidgetFromMRML()
+
+  def exit(self):
+    self.ui.segmentEditorWidget.setActiveEffect(None)
+    self.ui.segmentEditorWidget.removeViewObservations()
+    self.ui.segmentEditorWidget.uninstallKeyboardShortcuts()
+
+  def onSceneStartClose(self, caller, event):
+    self.ui.segmentEditorWidget.setSegmentationNode(None)
+    self.ui.segmentEditorWidget.removeViewObservations()
+
+  def onSceneEndClose(self, caller, event):
+    if self.parent.isEntered:
+      self.selectParameterNode()
+      self.ui.segmentEditorWidget.updateWidgetFromMRML()
+
+  def onSceneEndImport(self, caller, event):
+    if self.parent.isEntered:
+      self.selectParameterNode()
+      self.ui.segmentEditorWidget.updateWidgetFromMRML()
+
   def cleanup(self):
-    pass
+    self.removeObservers()
 
   def onExportModelsClicked(self):
     self.logic.exportModels(self.ui.segmentEditorWidget.segmentationNode())
